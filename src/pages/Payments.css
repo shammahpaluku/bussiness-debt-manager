@@ -1,0 +1,18 @@
+.table-container {
+  overflow-x: auto;
+}
+
+.table {
+  min-width: 800px;
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    font-size: 12px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 8px 4px;
+  }
+}
