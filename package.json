@@ -68,7 +68,8 @@
     "linux": {
       "target": ["AppImage", "deb"],
       "icon": "public/icon.png",
-      "maintainer": "Shammah Paluku <shammahpaluku@users.noreply.github.com>"
+      "maintainer": "Shammah Paluku <shammahpaluku@users.noreply.github.com>",
+      "category": "Office"
     },
     "mac": {
       "target": "dmg",

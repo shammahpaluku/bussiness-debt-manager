@@ -63,9 +63,31 @@ app.whenReady().then(() => {
       autoUpdater.on('error', (err) => console.error('[Updater] error', err));
       autoUpdater.on('update-available', (info) => console.log('[Updater] update-available', info.version));
       autoUpdater.on('update-not-available', () => console.log('[Updater] update-not-available'));
-      autoUpdater.on('download-progress', (p) => console.log(`[Updater] download ${Math.round(p.percent)}%`));
-      autoUpdater.on('update-downloaded', () => {
-        console.log('[Updater] update-downloaded, will install on quit');
+      autoUpdater.on('download-progress', (p) => {
+        if (mainWindow) {
+          mainWindow.webContents.send('update:progress', Math.round(p.percent));
+        }
+      });
+      autoUpdater.on('update-available', (info) => {
+        if (mainWindow) {
+          mainWindow.webContents.send('update:available', info.version);
+        }
+      });
+      autoUpdater.on('update-downloaded', async () => {
+        if (mainWindow) {
+          mainWindow.webContents.send('update:downloaded');
+        }
+        const res = await dialog.showMessageBox(mainWindow, {
+          type: 'question',
+          buttons: ['Restart now', 'Later'],
+          defaultId: 0,
+          cancelId: 1,
+          title: 'Update ready',
+          message: 'An update was downloaded. Restart to install now?'
+        });
+        if (res.response === 0) {
+          autoUpdater.quitAndInstall();
+        }
       });
       autoUpdater.checkForUpdatesAndNotify();
     } catch (e) {
@@ -166,6 +188,17 @@ ipcMain.handle('db:restore', async (event, backupPath) => {
 
 ipcMain.handle('db:exportCSV', async (event, type) => {
   return await db.exportCSV(type);
+});
+
+// Manual update check
+ipcMain.handle('update:check', async () => {
+  if (!app.isPackaged) return { started: false };
+  try {
+    await autoUpdater.checkForUpdates();
+    return { started: true };
+  } catch (e) {
+    return { started: false, error: String(e) };
+  }
 });
 
 // File dialog handlers
