@@ -1,6 +1,6 @@
 {
   "name": "vinledger",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "Wine & Liquor Debtors Manager - Single User Desktop App",
   "main": "public/electron.js",
   "homepage": "./",
@@ -15,7 +15,13 @@
     "build:linux": "npm run gen:icons && npm run webpack:build && electron-builder --linux",
     "dist": "npm run gen:icons && npm run webpack:build && electron-builder --publish=never"
   },
-  "keywords": ["wine", "debtors", "credit", "management", "electron"],
+  "keywords": [
+    "wine",
+    "debtors",
+    "credit",
+    "management",
+    "electron"
+  ],
   "author": "Shammah Paluku <shammahpaluku@users.noreply.github.com>",
   "license": "MIT",
   "repository": {
@@ -66,7 +72,10 @@
       "icon": "public/icon.ico"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "public/icon.png",
       "maintainer": "Shammah Paluku <shammahpaluku@users.noreply.github.com>",
       "category": "Office"
@@ -75,6 +84,8 @@
       "target": "dmg",
       "icon": "public/icon.icns"
     },
-    "publish": ["github"]
+    "publish": [
+      "github"
+    ]
   }
 }
