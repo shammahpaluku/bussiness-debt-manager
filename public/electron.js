@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const Database = require('./services/database');
 
@@ -55,6 +56,22 @@ app.whenReady().then(() => {
   db = new Database();
   
   createWindow();
+
+  // Auto-update in production
+  if (app.isPackaged) {
+    try {
+      autoUpdater.on('error', (err) => console.error('[Updater] error', err));
+      autoUpdater.on('update-available', (info) => console.log('[Updater] update-available', info.version));
+      autoUpdater.on('update-not-available', () => console.log('[Updater] update-not-available'));
+      autoUpdater.on('download-progress', (p) => console.log(`[Updater] download ${Math.round(p.percent)}%`));
+      autoUpdater.on('update-downloaded', () => {
+        console.log('[Updater] update-downloaded, will install on quit');
+      });
+      autoUpdater.checkForUpdatesAndNotify();
+    } catch (e) {
+      console.error('[Updater] failed to start updater', e);
+    }
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -58,6 +58,8 @@ jobs:
           files: |
             dist/*.deb
             dist/*.AppImage
+            dist/latest*.yml
+            dist/*.blockmap
           generate_release_notes: true
           fail_on_unmatched_files: false
         env:
@@ -109,6 +111,8 @@ jobs:
         with:
           files: |
             dist/*.exe
+            dist/latest*.yml
+            dist/*.blockmap
           generate_release_notes: true
           fail_on_unmatched_files: false
         env:
