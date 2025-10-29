@@ -16,7 +16,7 @@
     "dist": "npm run gen:icons && npm run webpack:build && electron-builder --publish=never"
   },
   "keywords": ["wine", "debtors", "credit", "management", "electron"],
-  "author": "VinLedger Team",
+  "author": "Shammah Paluku <shammahpaluku@users.noreply.github.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -46,8 +46,7 @@
     "crypto-js": "^4.2.0",
     "nodemailer": "^6.9.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "sqlite3": "^5.1.0"
+    "react-dom": "^18.2.0"
   },
   "build": {
     "appId": "com.vinledger.app",
@@ -67,7 +66,8 @@
     },
     "linux": {
       "target": ["AppImage", "deb"],
-      "icon": "public/icon.png"
+      "icon": "public/icon.png",
+      "maintainer": "Shammah Paluku <shammahpaluku@users.noreply.github.com>"
     },
     "mac": {
       "target": "dmg",
