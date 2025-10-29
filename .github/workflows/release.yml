@@ -10,6 +10,7 @@ jobs:
   build-linux:
     name: Build Linux (.deb, AppImage)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,15 +18,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 18.20.8
 
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3 make g++
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build renderer
         run: npm run webpack:build
@@ -53,6 +57,7 @@ jobs:
   build-windows:
     name: Build Windows (.exe)
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,10 +65,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 18.20.8
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install npm dependencies
+        run: npm install --no-audit --no-fund
 
       - name: Build renderer
         run: npm run webpack:build
