@@ -196,6 +196,28 @@ class DatabaseService {
     }
   }
 
+  async getOverdueDebts(branchId) {
+    try {
+      let sql = `
+        SELECT d.*, c.name as customer_name, c.phone, c.email,
+               b.name as branch_name
+        FROM debts d
+        JOIN customers c ON d.customer_id = c.id
+        LEFT JOIN branches b ON d.branch_id = b.id
+        WHERE d.status = 'Overdue'
+      `;
+      if (branchId) {
+        sql += ` AND d.branch_id = ? `;
+      }
+      sql += ` ORDER BY d.due_date ASC, d.created_at DESC`;
+      const stmt = this.db.prepare(sql);
+      return branchId ? stmt.all(branchId) : stmt.all();
+    } catch (error) {
+      console.error('Error getting overdue debts:', error);
+      throw error;
+    }
+  }
+
   async addDebt(debt) {
     try {
       const stmt = this.db.prepare(`
@@ -241,6 +263,23 @@ class DatabaseService {
       return { id, ...debt };
     } catch (error) {
       console.error('Error updating debt:', error);
+      throw error;
+    }
+  }
+
+  async getDebtById(id) {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT d.*, c.name as customer_name, c.phone, c.email,
+               b.name as branch_name
+        FROM debts d
+        JOIN customers c ON d.customer_id = c.id
+        LEFT JOIN branches b ON d.branch_id = b.id
+        WHERE d.id = ?
+      `);
+      return stmt.get(id);
+    } catch (error) {
+      console.error('Error getting debt by id:', error);
       throw error;
     }
   }
@@ -417,7 +456,16 @@ class DatabaseService {
       const rows = stmt.all();
       const settings = {};
       rows.forEach(row => {
-        settings[row.key] = row.value;
+        if (row.key === 'smtp_password' && row.value && String(row.value).startsWith('enc:')) {
+          try {
+            const decrypted = crypto.AES.decrypt(String(row.value).slice(4), 'vinledger-settings-key').toString(crypto.enc.Utf8);
+            settings[row.key] = decrypted;
+          } catch (_) {
+            settings[row.key] = '';
+          }
+        } else {
+          settings[row.key] = row.value;
+        }
       });
       return settings;
     } catch (error) {
@@ -434,7 +482,16 @@ class DatabaseService {
       `);
       
       for (const [key, value] of Object.entries(settings)) {
-        stmt.run(key, value);
+        let toStore = value;
+        if (key === 'smtp_password' && value) {
+          if (typeof value === 'string' && value.startsWith('enc:')) {
+            toStore = value;
+          } else {
+            const encrypted = crypto.AES.encrypt(String(value), 'vinledger-settings-key').toString();
+            toStore = `enc:${encrypted}`;
+          }
+        }
+        stmt.run(key, toStore);
       }
       return { success: true };
     } catch (error) {
@@ -539,6 +596,45 @@ class DatabaseService {
       return exportPath;
     } catch (error) {
       console.error('Error exporting CSV:', error);
+      throw error;
+    }
+  }
+
+  // Email logging
+  async logEmail(entry) {
+    try {
+      const stmt = this.db.prepare(`
+        INSERT INTO email_log (customer_id, debt_id, to_email, subject, body_snippet, status, provider_response)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      stmt.run(
+        entry.customer_id || null,
+        entry.debt_id || null,
+        String(entry.to_email || ''),
+        String(entry.subject || ''),
+        entry.body_snippet ? String(entry.body_snippet) : null,
+        String(entry.status || 'Sent'),
+        entry.provider_response ? String(entry.provider_response) : null
+      );
+      return { success: true };
+    } catch (error) {
+      console.error('Error logging email:', error);
+      throw error;
+    }
+  }
+
+  async getEmailLog() {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT e.*, c.name AS customer_name, d.reference AS debt_reference
+        FROM email_log e
+        LEFT JOIN customers c ON e.customer_id = c.id
+        LEFT JOIN debts d ON e.debt_id = d.id
+        ORDER BY e.sent_at DESC, e.id DESC
+      `);
+      return stmt.all();
+    } catch (error) {
+      console.error('Error fetching email log:', error);
       throw error;
     }
   }

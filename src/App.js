@@ -3,6 +3,7 @@ import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Debts from './pages/Debts';
 import Payments from './pages/Payments';
+import Emails from './pages/Emails';
 import Settings from './pages/Settings';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
@@ -50,6 +51,8 @@ function App() {
         return <Debts settings={settings} />;
       case 'payments':
         return <Payments settings={settings} />;
+      case 'emails':
+        return <Emails />;
       case 'settings':
         return <Settings settings={settings} updateSettings={updateSettings} />;
       default:

@@ -17,6 +17,13 @@ const Settings = ({ settings, updateSettings }) => {
     smtp_password: '',
     smtp_from_name: '',
     smtp_from_email: '',
+    smtp_secure: '0',
+    smtp_require_tls: '1',
+    smtp_allow_invalid_tls: '0',
+    smtp_reply_to: '',
+    email_subject_template: 'Payment Reminder: Balance {{currency_symbol}} {{balance}} due on {{due_date}}',
+    email_template_html: '<p>Dear {{customer_name}},</p><p>This is a friendly reminder regarding your outstanding balance for purchases on {{purchase_date}}.</p><p><strong>Items:</strong> {{items}}</p><p><strong>Total:</strong> {{currency_symbol}} {{total}}</p><p><strong>Paid:</strong> {{currency_symbol}} {{paid}}</p><p><strong>Balance:</strong> {{currency_symbol}} {{balance}}</p><p><strong>Due Date:</strong> {{due_date}}</p><p>Please make payment at your earliest convenience.</p>',
+    email_attach_pdf: '0',
     email_signature: '',
     reminder_schedule: '{"before_due": 3, "on_due": true, "after_due": 3}'
   });
@@ -24,6 +31,7 @@ const Settings = ({ settings, updateSettings }) => {
   const [activeTab, setActiveTab] = useState('general');
   const [branches, setBranches] = useState([]);
   const [newBranchName, setNewBranchName] = useState('');
+  const [testEmailTo, setTestEmailTo] = useState('');
 
   useEffect(() => {
     if (settings) {
@@ -40,6 +48,13 @@ const Settings = ({ settings, updateSettings }) => {
         smtp_password: settings.smtp_password || '',
         smtp_from_name: settings.smtp_from_name || '',
         smtp_from_email: settings.smtp_from_email || '',
+        smtp_secure: settings.smtp_secure || '0',
+        smtp_require_tls: settings.smtp_require_tls || '1',
+        smtp_allow_invalid_tls: settings.smtp_allow_invalid_tls || '0',
+        smtp_reply_to: settings.smtp_reply_to || '',
+        email_subject_template: settings.email_subject_template || 'Payment Reminder: Balance {{currency_symbol}} {{balance}} due on {{due_date}}',
+        email_template_html: settings.email_template_html || '<p>Dear {{customer_name}},</p><p>This is a friendly reminder regarding your outstanding balance for purchases on {{purchase_date}}.</p><p><strong>Items:</strong> {{items}}</p><p><strong>Total:</strong> {{currency_symbol}} {{total}}</p><p><strong>Paid:</strong> {{currency_symbol}} {{paid}}</p><p><strong>Balance:</strong> {{currency_symbol}} {{balance}}</p><p><strong>Due Date:</strong> {{due_date}}</p><p>Please make payment at your earliest convenience.</p>',
+        email_attach_pdf: settings.email_attach_pdf || '0',
         email_signature: settings.email_signature || '',
         reminder_schedule: settings.reminder_schedule || '{"before_due": 3, "on_due": true, "after_due": 3}'
       });
@@ -105,8 +120,13 @@ const Settings = ({ settings, updateSettings }) => {
   const handleTestEmail = async () => {
     try {
       setLoading(true);
-      // This would need to be implemented in the backend
-      alert('Email test functionality will be implemented in the next version.');
+      const to = (testEmailTo || formData.smtp_from_email || '').trim();
+      const res = await ipcRenderer.invoke('mail:test', { to });
+      if (res && res.success) {
+        alert(res.message || 'Test email sent successfully.');
+      } else {
+        alert((res && res.message) || 'Failed to send test email. Please check your settings.');
+      }
     } catch (error) {
       console.error('Error testing email:', error);
       alert('Error testing email. Please check your settings.');
@@ -335,6 +355,36 @@ const Settings = ({ settings, updateSettings }) => {
                   />
                 </div>
                 <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={String(formData.smtp_secure) === '1'}
+                      onChange={(e) => setFormData({ ...formData, smtp_secure: e.target.checked ? '1' : '0' })}
+                    />{' '}
+                    Use SSL (port 465)
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={String(formData.smtp_require_tls) === '1'}
+                      onChange={(e) => setFormData({ ...formData, smtp_require_tls: e.target.checked ? '1' : '0' })}
+                    />{' '}
+                    Require STARTTLS (recommended)
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={String(formData.smtp_allow_invalid_tls) === '1'}
+                      onChange={(e) => setFormData({ ...formData, smtp_allow_invalid_tls: e.target.checked ? '1' : '0' })}
+                    />{' '}
+                    Allow invalid TLS certificates (not recommended)
+                  </label>
+                </div>
+                <div className="form-group">
                   <label>SMTP Username</label>
                   <input
                     type="text"
@@ -367,12 +417,58 @@ const Settings = ({ settings, updateSettings }) => {
                   />
                 </div>
                 <div className="form-group">
+                  <label>Reply-To (optional)</label>
+                  <input
+                    type="email"
+                    value={formData.smtp_reply_to}
+                    onChange={(e) => setFormData({...formData, smtp_reply_to: e.target.value})}
+                    placeholder="Address to receive replies"
+                  />
+                </div>
+                <div className="form-group">
                   <label>Email Signature</label>
                   <textarea
                     value={formData.email_signature}
                     onChange={(e) => setFormData({...formData, email_signature: e.target.value})}
                     rows="4"
                     placeholder="Best regards,&#10;Your Name&#10;Your Business"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email Subject Template</label>
+                  <input
+                    type="text"
+                    value={formData.email_subject_template}
+                    onChange={(e) => setFormData({ ...formData, email_subject_template: e.target.value })}
+                    placeholder="e.g., Payment Reminder: Balance {{currency_symbol}} {{balance}} due on {{due_date}}"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email HTML Template</label>
+                  <textarea
+                    value={formData.email_template_html}
+                    onChange={(e) => setFormData({ ...formData, email_template_html: e.target.value })}
+                    rows="8"
+                    placeholder="Use placeholders like {{customer_name}}, {{items}}, {{total}}, {{paid}}, {{balance}}, {{due_date}}, {{purchase_date}}, {{currency_symbol}}"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={String(formData.email_attach_pdf) === '1'}
+                      onChange={(e) => setFormData({ ...formData, email_attach_pdf: e.target.checked ? '1' : '0' })}
+                    />{' '}
+                    Attach PDF statement to reminders
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label>Test Recipient (optional)</label>
+                  <input
+                    type="email"
+                    value={testEmailTo}
+                    onChange={(e) => setTestEmailTo(e.target.value)}
+                    placeholder="Leave empty to send to From Email"
                   />
                 </div>
                 <div className="form-group">
@@ -383,6 +479,26 @@ const Settings = ({ settings, updateSettings }) => {
                     disabled={loading}
                   >
                     Test Email Configuration
+                  </button>
+                </div>
+                <div className="form-group">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                        const res = await ipcRenderer.invoke('mail:probe');
+                        alert(res && res.message ? res.message : 'Probe finished.');
+                      } catch (e) {
+                        alert('Probe failed.');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    Probe SMTP Connection
                   </button>
                 </div>
               </div>

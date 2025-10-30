@@ -44,6 +44,24 @@ const Debts = ({ settings }) => {
     }
   };
 
+  const handleBulkReminders = async () => {
+    try {
+      const input = window.prompt('Rate limit (emails per minute)?', '30');
+      const rpm = input ? parseInt(input, 10) : 30;
+      setLoading(true);
+      const res = await ipcRenderer.invoke('mail:queueReminders', {
+        branchId: selectedBranch || null,
+        ratePerMinute: isNaN(rpm) ? 30 : rpm
+      });
+      alert((res && res.message) || 'Bulk reminder queue finished.');
+    } catch (e) {
+      console.error('Bulk reminders error:', e);
+      alert('Failed to queue reminders.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -127,6 +145,23 @@ const Debts = ({ settings }) => {
     }
   };
 
+  const handleSendReminder = async (debt) => {
+    try {
+      setLoading(true);
+      const res = await ipcRenderer.invoke('mail:sendReminder', { debtId: debt.id });
+      if (res && res.success) {
+        alert(res.message || 'Reminder sent successfully.');
+      } else {
+        alert((res && res.message) || 'Failed to send reminder.');
+      }
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+      alert('Error sending reminder.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -161,6 +196,14 @@ const Debts = ({ settings }) => {
           onClick={() => setShowModal(true)}
         >
           Add New Debt
+        </button>
+        <button
+          className="btn btn-secondary"
+          style={{ marginLeft: '8px' }}
+          onClick={handleBulkReminders}
+          disabled={loading}
+        >
+          Send Overdue Reminders
         </button>
       </div>
 
@@ -217,6 +260,14 @@ const Debts = ({ settings }) => {
                         onClick={() => handleDelete(debt.id)}
                       >
                         Delete
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => handleSendReminder(debt)}
+                        disabled={!debt.email || loading}
+                        title={!debt.email ? 'No customer email on file' : ''}
+                      >
+                        Send Reminder
                       </button>
                     </div>
                   </td>

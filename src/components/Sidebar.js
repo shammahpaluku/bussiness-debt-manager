@@ -7,6 +7,7 @@ const Sidebar = ({ currentPage, setCurrentPage }) => {
     { id: 'customers', label: 'Customers', icon: '👥' },
     { id: 'debts', label: 'Debts', icon: '📋' },
     { id: 'payments', label: 'Payments', icon: '💰' },
+    { id: 'emails', label: 'Emails', icon: '✉️' },
     { id: 'settings', label: 'Settings', icon: '⚙️' }
   ];
 
