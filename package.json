@@ -1,6 +1,6 @@
 {
   "name": "vinledger",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Wine & Liquor Debtors Manager - Single User Desktop App",
   "main": "public/electron.js",
   "homepage": "./",
